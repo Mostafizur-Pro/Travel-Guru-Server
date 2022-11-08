@@ -47,6 +47,12 @@ async function run() {
       const serviceId = await serviceCollection.findOne(query);
       res.send(serviceId);
     });
+    app.get("/comments/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const serviceId = await commentCollection.findOne(query);
+      res.send(serviceId);
+    });
 
     // comments field add in mongodb
     app.post("/comments", async (req, res) => {
@@ -66,19 +72,20 @@ async function run() {
       const comment = await cursor.toArray();
       res.send(comment);
     });
-    // app.patch("/comments/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const status = req.body.status;
-    //   let query = { _id: ObjectId(id) };
-    //   const updateComment = {
-    //     $set: {
-    //       status: status,
-    //     },
-    //   };
+    app.patch("/comments/:id", async (req, res) => {
+      const id = req.params.id;
+      const status = req.body.status;
+      let query = { _id: ObjectId(id) };
+      const updateComment = {
+        $set: {
+          status: status,
+        },
+      };
 
-    //   const result = await commentCollection.updateOne(query, updateComment);
-    //   res.send(result);
-    // });
+      const result = await commentCollection.updateOne(query, updateComment);
+      res.send(result);
+    });
+
     app.delete("/comments/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
