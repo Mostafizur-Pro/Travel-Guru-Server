@@ -34,6 +34,7 @@ async function run() {
       res.send(services);
     });
 
+    // My service add
     app.post("/services", async (req, res) => {
       const service = req.body;
       const result = await serviceCollection.insertOne(service);
@@ -53,6 +54,7 @@ async function run() {
       const serviceId = await serviceCollection.findOne(query);
       res.send(serviceId);
     });
+    // review find with id
     app.get("/comments/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
@@ -66,7 +68,7 @@ async function run() {
       const result = await commentCollection.insertOne(comment);
       res.send(result);
     });
-
+    // all review find
     app.get("/comments", async (req, res) => {
       let query = {};
       if (req.query.email) {
@@ -78,6 +80,7 @@ async function run() {
       const comment = await cursor.toArray();
       res.send(comment);
     });
+
     app.patch("/comments/:id", async (req, res) => {
       const id = req.params.id;
       const status = req.body.status;
@@ -91,7 +94,7 @@ async function run() {
       const result = await commentCollection.updateOne(query, updateComment);
       res.send(result);
     });
-
+    // review delete
     app.delete("/comments/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
