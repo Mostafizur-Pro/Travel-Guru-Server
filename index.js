@@ -33,6 +33,12 @@ async function run() {
       const services = await cursor.limit(3).toArray();
       res.send(services);
     });
+
+    app.post("/services", async (req, res) => {
+      const service = req.body;
+      const result = await serviceCollection.insertOne(service);
+      res.send(result);
+    });
     // all service show display
     app.get("/servicesall", async (req, res) => {
       const query = {};
