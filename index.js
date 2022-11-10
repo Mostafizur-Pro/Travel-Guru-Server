@@ -17,34 +17,34 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
-// function verifyJWT(req, res, next) {
-//   const authHeader = req.headers.authorization;
-//   if (!authHeader) {
-//     return res.status(401)({ mesage: "Unauthorized access" });
-//   }
-//   const token = authHeader.split(" ")[1];
-//   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
-//     if (err) {
-//       res.status(401).send({ message: "Unauthrized access" });
-//     }
-//     req.decoded = decoded;
-//     next();
-//   });
-// }
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "unauthorized access " });
+  }
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN, function (error, decoded) {
+    if (error) {
+      return res.status(403).send({ message: "Forbidden access" });
+    }
+    res.decoded = decoded;
+    next();
+  });
+}
 
 async function run() {
   try {
     const serviceCollection = client.db("travelGuru").collection("services");
     const commentCollection = client.db("travelGuru").collection("comments");
 
-    // jwt
-    // app.post("/jwt", (req, res) => {
-    //   const user = req.body;
-    //   const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-    //     expiresIn: "1h",
-    //   });
-    //   res.send({ token });
-    // });
+    // jwt;
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1d",
+      });
+      res.send({ token });
+    });
 
     // only 3 service in show display
     app.get("/services", async (req, res) => {
@@ -74,6 +74,47 @@ async function run() {
       const serviceId = await serviceCollection.findOne(query);
       res.send(serviceId);
     });
+
+    // all review find
+    app.get("/comments", async (req, res) => {
+      // const decoded = req.decoded;
+      // console.log("inside orders api", decoded);
+      // if (decoded.email !== req.query.email) {
+      //   res.status(403).send({ message: "Unauthrized access" });
+      // }
+
+      let query = {};
+      if (req.query.email) {
+        query = {
+          email: req.query.email,
+        };
+      }
+      const cursor = commentCollection.find(query);
+      const comment = await cursor.toArray();
+      res.send(comment);
+    });
+
+    // comments field add in mongodb
+    app.post("/comments", async (req, res) => {
+      const comment = req.body;
+      const result = await commentCollection.insertOne(comment);
+      res.send(result);
+    });
+
+    app.patch("/comments/:id", async (req, res) => {
+      const id = req.params.id;
+      const status = req.body.status;
+      let query = { _id: ObjectId(id) };
+      const updateComment = {
+        $set: {
+          status: status,
+        },
+      };
+
+      const result = await commentCollection.updateOne(query, updateComment);
+      res.send(result);
+    });
+
     // review find with id
     app.get("/comments/:id", async (req, res) => {
       const id = req.params.id;
@@ -98,45 +139,6 @@ async function run() {
         updatedUser,
         option
       );
-      res.send(result);
-    });
-
-    // comments field add in mongodb
-    app.post("/comments", async (req, res) => {
-      const comment = req.body;
-      const result = await commentCollection.insertOne(comment);
-      res.send(result);
-    });
-    // all review find
-    app.get("/comments", async (req, res) => {
-      // const decoded = req.decoded;
-      // console.log("inside orders api", decoded);
-      // if (decoded.email !== req.query.email) {
-      //   res.status(403).send({ message: "Unauthrized access" });
-      // }
-
-      let query = {};
-      if (req.query.email) {
-        query = {
-          email: req.query.email,
-        };
-      }
-      const cursor = commentCollection.find(query);
-      const comment = await cursor.toArray();
-      res.send(comment);
-    });
-
-    app.patch("/comments/:id", async (req, res) => {
-      const id = req.params.id;
-      const status = req.body.status;
-      let query = { _id: ObjectId(id) };
-      const updateComment = {
-        $set: {
-          status: status,
-        },
-      };
-
-      const result = await commentCollection.updateOne(query, updateComment);
       res.send(result);
     });
     // review delete
