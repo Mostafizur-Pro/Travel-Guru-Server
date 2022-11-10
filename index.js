@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
+const jwt = require("jsonwebtoken");
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
@@ -10,22 +11,41 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// User Name : travelGuru
-// User Password : 1FhsnUyK8wHosOWV
-// process.env.DB_USER
-// process.env.DB_PASSWORD
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.5xecsyp.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
+// function verifyJWT(req, res, next) {
+//   const authHeader = req.headers.authorization;
+//   if (!authHeader) {
+//     return res.status(401)({ mesage: "Unauthorized access" });
+//   }
+//   const token = authHeader.split(" ")[1];
+//   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+//     if (err) {
+//       res.status(401).send({ message: "Unauthrized access" });
+//     }
+//     req.decoded = decoded;
+//     next();
+//   });
+// }
 
 async function run() {
   try {
     const serviceCollection = client.db("travelGuru").collection("services");
     const commentCollection = client.db("travelGuru").collection("comments");
+
+    // jwt
+    // app.post("/jwt", (req, res) => {
+    //   const user = req.body;
+    //   const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+    //     expiresIn: "1h",
+    //   });
+    //   res.send({ token });
+    // });
+
     // only 3 service in show display
     app.get("/services", async (req, res) => {
       const query = {};
@@ -62,6 +82,25 @@ async function run() {
       res.send(serviceId);
     });
 
+    app.put("/comments/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const data = req.body;
+      const option = { upsert: true };
+      const updatedUser = {
+        $set: {
+          name: data.name,
+          comment: data.comments,
+        },
+      };
+      const result = await commentCollection.updateOne(
+        query,
+        updatedUser,
+        option
+      );
+      res.send(result);
+    });
+
     // comments field add in mongodb
     app.post("/comments", async (req, res) => {
       const comment = req.body;
@@ -70,6 +109,12 @@ async function run() {
     });
     // all review find
     app.get("/comments", async (req, res) => {
+      // const decoded = req.decoded;
+      // console.log("inside orders api", decoded);
+      // if (decoded.email !== req.query.email) {
+      //   res.status(403).send({ message: "Unauthrized access" });
+      // }
+
       let query = {};
       if (req.query.email) {
         query = {
@@ -107,8 +152,8 @@ async function run() {
 run().catch((err) => console.error(err));
 
 app.get("/", (req, res) => {
-  res.send("genius car server is running");
+  res.send("travel-guru car server is running");
 });
 app.listen(port, () => {
-  console.log(`Genius car server rining on ${port}`);
+  console.log(`travel-guru car server rining on ${port}`);
 });
